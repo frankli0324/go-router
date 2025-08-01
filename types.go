@@ -5,22 +5,22 @@ import (
 	"strings"
 )
 
+type holder struct{ k, v string }
 type matcher interface {
-	match(string) (int, bool, func(v map[string]string))
+	match(string, *holder) (int, bool)
 	equal(matcher) bool
 	string() string
 }
 
 type literal string
 
-func (l literal) match(s string) (int, bool, func(v map[string]string)) {
-	if len(l) > len(s) {
-		return 0, false, nil
+func (l literal) match(s string, _ *holder) (i int, ok bool) {
+	i = len(l)
+	ok = len(s) >= i && s[:i] == string(l)
+	if !ok {
+		i = 0
 	}
-	if s[:len(l)] == string(l) {
-		return len(l), true, nil
-	}
-	return 0, false, nil
+	return
 }
 
 func (l literal) equal(m matcher) bool {
@@ -39,25 +39,22 @@ type param struct {
 	after string
 }
 
-func (p param) match(s string) (int, bool, func(v map[string]string)) {
+func (p param) match(s string, h *holder) (int, bool) {
 	if s == "" {
-		return 0, false, nil
+		return 0, false
 	}
-	var i int
-	if p.after == "" {
-		i = strings.IndexByte(s, '/')
-		if i == -1 {
-			i = len(s)
-		}
-	} else {
-		i = strings.Index(s, p.after)
+	i := strings.IndexByte(s, '/')
+	if i == -1 {
+		i = len(s)
+	}
+	if p.after != "" {
+		i = strings.Index(s[:i], p.after)
 	}
 	if i == -1 {
-		return 0, false, nil
+		return 0, false
 	}
-	return i, true, func(v map[string]string) {
-		v[p.key] = s[:i]
-	}
+	*h = holder{p.key, s[:i]}
+	return i, true
 }
 
 func (p param) equal(m matcher) bool {
@@ -73,10 +70,9 @@ func (p param) string() string {
 
 type wildcard string
 
-func (w wildcard) match(s string) (int, bool, func(v map[string]string)) {
-	return len(s), true, func(v map[string]string) {
-		v[string(w)] = s
-	}
+func (w wildcard) match(s string, h *holder) (int, bool) {
+	*h = holder{string(w), s}
+	return len(s), true
 }
 
 func (w wildcard) equal(m matcher) bool {
@@ -95,17 +91,13 @@ type regex struct {
 	*regexp.Regexp
 }
 
-func (w regex) match(s string) (int, bool, func(v map[string]string)) {
-	matches := w.FindStringSubmatch(s)
-	if matches == nil {
-		return 0, false, nil
+func (w regex) match(s string, h *holder) (int, bool) {
+	match := w.FindString(s)
+	if match == "" {
+		return 0, false
 	}
-	return len(matches[0]), true, func(v map[string]string) {
-		v[w.key] = matches[0]
-		for i, name := range w.SubexpNames()[1:] {
-			v[name] = matches[i+1]
-		}
-	}
+	*h = holder{w.key, match}
+	return len(match), true
 }
 
 func (w regex) equal(m matcher) bool {

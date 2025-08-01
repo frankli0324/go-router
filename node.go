@@ -73,14 +73,17 @@ func (n *node[T]) get(path string, params map[string]string) *node[T] {
 		if l, ok := child.m.(literal); ok && len(path) != 0 && len(l) != 0 && string(l)[0] != path[0] {
 			continue
 		}
-		end, ok, assign := 0, false, (func(v map[string]string))(nil)
-		switch m := child.m.(type) { // golang is too dumb to inline these
+		end, ok, assign := 0, false, holder{}
+		// golang is too dumb to inline these and not escape assign to heap
+		switch m := child.m.(type) {
 		case literal:
-			end, ok, assign = m.match(path)
+			end, ok = m.match(path, &assign)
 		case wildcard:
-			end, ok, assign = m.match(path)
-		default:
-			end, ok, assign = m.match(path)
+			end, ok = m.match(path, &assign)
+		case param:
+			end, ok = m.match(path, &assign)
+		case regex:
+			end, ok = m.match(path, &assign)
 		}
 		if !ok {
 			continue
@@ -92,8 +95,8 @@ func (n *node[T]) get(path string, params map[string]string) *node[T] {
 			}
 			next = child
 		}
-		if next != nil && next.assigned && assign != nil && params != nil {
-			assign(params)
+		if next != nil && next.assigned && assign.k != "" && params != nil {
+			params[assign.k] = assign.v
 		}
 		return next
 	}
