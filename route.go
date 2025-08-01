@@ -4,7 +4,8 @@ type Router[T any] struct {
 	tree node[T]
 }
 
-func (r *Router[T]) Handle(path string, handler T) error {
+// Set registers a value for the given URL pattern. It's not routine-safe.
+func (r *Router[T]) Set(path string, handler T) error {
 	if path == "" || path[0] != '/' {
 		return ErrInvalidPath.With(path)
 	}
@@ -13,6 +14,9 @@ func (r *Router[T]) Handle(path string, handler T) error {
 	return err
 }
 
+// GetParam matches the given path and returns the corresponding value,
+// assigning the given params map with the matched parameters.
+// If no pattern is found, the zero value is returned. It's routine-safe.
 func (r *Router[T]) GetParam(path string, params map[string]string) (zero T) {
 	if path == "" || path[0] != '/' {
 		return zero
@@ -24,6 +28,8 @@ func (r *Router[T]) GetParam(path string, params map[string]string) (zero T) {
 	return n.handler
 }
 
+// Get matches the given path and returns the corresponding value.
+// If no pattern is found, the zero value is returned. It's routine-safe.
 func (r *Router[T]) Get(path string) T {
 	return r.GetParam(path, nil)
 }

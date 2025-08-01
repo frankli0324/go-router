@@ -9,13 +9,13 @@ import (
 
 func TestRouterBasic(t *testing.T) {
 	r := NewRouter[int]()
-	r.Handle("/", 1)
-	r.Handle("/a", 2)
-	r.Handle("/a/b", 3)
-	r.Handle("/a/b/c", 4)
-	r.Handle("/d", 5)
-	r.Handle("/d/e", 6)
-	r.Handle("/d/b", 7)
+	r.Set("/", 1)
+	r.Set("/a", 2)
+	r.Set("/a/b", 3)
+	r.Set("/a/b/c", 4)
+	r.Set("/d", 5)
+	r.Set("/d/e", 6)
+	r.Set("/d/b", 7)
 	for i, route := range []string{"/", "/a", "/a/b", "/a/b/c", "/d", "/d/e", "/d/b"} {
 		if r.Get(route) != i+1 {
 			t.Errorf("expected %d, got %d", i+1, r.Get(route))
@@ -25,9 +25,9 @@ func TestRouterBasic(t *testing.T) {
 
 func TestRouterOrder(t *testing.T) {
 	r := NewRouter[int]()
-	r.Handle("/", 1)
-	r.Handle("/{a}", 2)
-	r.Handle("/a", 3)
+	r.Set("/", 1)
+	r.Set("/{a}", 2)
+	r.Set("/a", 3)
 	if hit := r.Get("/a"); hit != 3 {
 		t.Errorf("expected to match literal, got %d", hit)
 	}
@@ -90,7 +90,7 @@ func TestTreeAddAndGet(t *testing.T) {
 	}
 
 	for _, route := range routes {
-		tree.Handle(route, route)
+		tree.Set(route, route)
 	}
 
 	checkRequests(t, tree, testRequests{
@@ -140,25 +140,25 @@ func TestTreeWildcard(t *testing.T) {
 	}
 
 	for _, route := range routes {
-		tree.Handle(route, route)
+		tree.Set(route, route)
 	}
 
 	checkRequests(t, tree, testRequests{
-		// {"/", false, "/", nil},
-		// {"/cmd/test/", false, "/cmd/{tool}/", map[string]string{"tool": "test"}},
-		// {"/cmd/test", true, "", nil},
-		// {"/cmd/test/3", false, "/cmd/{tool}/{sub}", map[string]string{"tool": "test", "sub": "3"}},
-		// {"/src/", false, "/src/{filepath:*}", map[string]string{"filepath": ""}},
-		// {"/src/some/file.png", false, "/src/{filepath:*}", map[string]string{"filepath": "some/file.png"}},
-		// {"/search/", false, "/search/", nil},
-		// {"/search/someth!ng+in+ünìcodé", false, "/search/{query}", map[string]string{"query": "someth!ng+in+ünìcodé"}},
-		// {"/search/someth!ng+in+ünìcodé/", true, "", nil},
-		// {"/user_gopher", false, "/user_{name}", map[string]string{"name": "gopher"}},
-		// {"/user_gopher/about", false, "/user_{name}/about", map[string]string{"name": "gopher"}},
-		// {"/files/js/inc/framework.js", false, "/files/{dir}/{filepath:*}", map[string]string{"dir": "js", "filepath": "inc/framework.js"}},
+		{"/", false, "/", nil},
+		{"/cmd/test/", false, "/cmd/{tool}/", map[string]string{"tool": "test"}},
+		{"/cmd/test", true, "", nil},
+		{"/cmd/test/3", false, "/cmd/{tool}/{sub}", map[string]string{"tool": "test", "sub": "3"}},
+		{"/src/", false, "/src/{filepath:*}", map[string]string{"filepath": ""}},
+		{"/src/some/file.png", false, "/src/{filepath:*}", map[string]string{"filepath": "some/file.png"}},
+		{"/search/", false, "/search/", nil},
+		{"/search/someth!ng+in+ünìcodé", false, "/search/{query}", map[string]string{"query": "someth!ng+in+ünìcodé"}},
+		{"/search/someth!ng+in+ünìcodé/", true, "", nil},
+		{"/user_gopher", false, "/user_{name}", map[string]string{"name": "gopher"}},
+		{"/user_gopher/about", false, "/user_{name}/about", map[string]string{"name": "gopher"}},
+		{"/files/js/inc/framework.js", false, "/files/{dir}/{filepath:*}", map[string]string{"dir": "js", "filepath": "inc/framework.js"}},
 		{"/info/gordon/public", false, "/info/{user}/public", map[string]string{"user": "gordon"}},
-		// {"/info/gordon/project/go", false, "/info/{user}/project/{project}", map[string]string{"user": "gordon", "project": "go"}},
-		// {"/info/gordon", true, "", nil},
+		{"/info/gordon/project/go", false, "/info/{user}/project/{project}", map[string]string{"user": "gordon", "project": "go"}},
+		{"/info/gordon", true, "", nil},
 	})
 }
 
@@ -175,14 +175,14 @@ func TestTreeDuplicatePath(t *testing.T) {
 
 	for _, route := range routes {
 		handler := route
-		recv := tree.Handle(route, handler)
+		recv := tree.Set(route, handler)
 
 		if recv != nil {
 			t.Fatalf("panic inserting route '%s': %v", route, recv)
 		}
 
 		// Add again
-		recv = tree.Handle(route, handler)
+		recv = tree.Set(route, handler)
 		if recv == nil {
 			t.Fatalf("no panic while inserting duplicate route '%s", route)
 		}
@@ -208,7 +208,7 @@ func TestEmptyWildcardName(t *testing.T) {
 	}
 
 	for _, route := range routes {
-		recv := tree.Handle(route, route)
+		recv := tree.Set(route, route)
 		if recv == nil {
 			t.Errorf("no panic while inserting route with empty expression name '%s", route)
 		}
@@ -226,7 +226,7 @@ func TestTreeDoubleWildcard(t *testing.T) {
 
 	for _, route := range routes {
 		tree := NewRouter[string]()
-		recv := tree.Handle(route, route)
+		recv := tree.Set(route, route)
 
 		if recv == nil || !strings.Contains(recv.Error(), panicMsg) {
 			t.Fatalf(`"Expected panic "%s" for route '%s', got "%v"`, panicMsg, route, recv)
@@ -266,7 +266,7 @@ func TestTreeTrailingSlashRedirect(t *testing.T) {
 		"/foo/",
 	}
 	for _, route := range routes {
-		recv := tree.Handle(route, route)
+		recv := tree.Set(route, route)
 		if recv != nil {
 			t.Fatalf("panic inserting route '%s': %v", route, recv)
 		}
@@ -316,7 +316,7 @@ func TestTreeTrailingSlashRedirect(t *testing.T) {
 func TestTreeRootTrailingSlashRedirect(t *testing.T) {
 	tree := NewRouter[string]()
 
-	recv := tree.Handle("/{test}", "/{test}")
+	recv := tree.Set("/{test}", "/{test}")
 
 	if recv != nil {
 		t.Fatalf("panic inserting test route: %v", recv)
@@ -339,7 +339,7 @@ func TestTreeWildcardConflictEx(t *testing.T) {
 		"/{id}",
 	}
 	for _, route := range routes {
-		if err := router.Handle(route, route); err != nil {
+		if err := router.Set(route, route); err != nil {
 			t.Errorf("expected no error, got %v", err)
 		}
 	}
@@ -408,7 +408,7 @@ func TestTreeWildcardConflictEx(t *testing.T) {
 	}
 
 	for _, conflict := range conflicts {
-		err := router.Handle(conflict.route, conflict.route)
+		err := router.Set(conflict.route, conflict.route)
 
 		if conflict.wantErr == (err == nil) {
 			t.Errorf("Unexpected error: %v [%s]", err, conflict.route)
