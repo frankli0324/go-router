@@ -28,10 +28,8 @@ func (n *node[T]) add(path, fullPath string, handler T) (*node[T], error) {
 				if !ok || string(l)[0] != path[0] {
 					continue
 				}
-				if common := lcp(string(l), string(next)); common > 0 {
-					if common > maxl {
-						maxi, maxl = i, common
-					}
+				if common := lcp(string(l), string(next)); common > maxl {
+					maxi, maxl = i, common
 				}
 			}
 			if maxi != -1 {
@@ -70,20 +68,20 @@ func (n *node[T]) add(path, fullPath string, handler T) (*node[T], error) {
 
 func (n *node[T]) get(path string, params map[string]string) *node[T] {
 	for _, child := range n.children {
-		if l, ok := child.m.(literal); ok && len(path) != 0 && len(l) != 0 && string(l)[0] != path[0] {
-			continue
-		}
-		end, ok, assign := 0, false, holder{}
+		end, ok, key := 0, false, ""
 		// golang is too dumb to inline these and not escape assign to heap
 		switch m := child.m.(type) {
 		case literal:
-			end, ok = m.match(path, &assign)
+			if len(path) != 0 && len(m) != 0 && string(m)[0] != path[0] {
+				continue
+			}
+			end, key, ok = m.match(path)
 		case wildcard:
-			end, ok = m.match(path, &assign)
+			end, key, ok = m.match(path)
 		case param:
-			end, ok = m.match(path, &assign)
+			end, key, ok = m.match(path)
 		case regex:
-			end, ok = m.match(path, &assign)
+			end, key, ok = m.match(path)
 		}
 		if !ok {
 			continue
@@ -95,8 +93,8 @@ func (n *node[T]) get(path string, params map[string]string) *node[T] {
 			}
 			next = child
 		}
-		if next != nil && next.assigned && assign.k != "" && params != nil {
-			params[assign.k] = assign.v
+		if params != nil && next != nil && next.assigned && key != "" {
+			params[key] = path[:end]
 		}
 		return next
 	}

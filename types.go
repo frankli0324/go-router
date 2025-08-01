@@ -5,22 +5,16 @@ import (
 	"strings"
 )
 
-type holder struct{ k, v string }
 type matcher interface {
-	match(string, *holder) (int, bool)
+	match(string) (int, string, bool)
 	equal(matcher) bool
 	string() string
 }
 
 type literal string
 
-func (l literal) match(s string, _ *holder) (i int, ok bool) {
-	i = len(l)
-	ok = len(s) >= i && s[:i] == string(l)
-	if !ok {
-		i = 0
-	}
-	return
+func (l literal) match(s string) (int, string, bool) {
+	return len(l), "", len(s) >= len(l) && s[:len(l)] == string(l)
 }
 
 func (l literal) equal(m matcher) bool {
@@ -39,9 +33,9 @@ type param struct {
 	after string
 }
 
-func (p param) match(s string, h *holder) (int, bool) {
+func (p param) match(s string) (int, string, bool) {
 	if s == "" {
-		return 0, false
+		return 0, "", false
 	}
 	i := strings.IndexByte(s, '/')
 	if i == -1 {
@@ -50,11 +44,7 @@ func (p param) match(s string, h *holder) (int, bool) {
 	if p.after != "" {
 		i = strings.Index(s[:i], p.after)
 	}
-	if i == -1 {
-		return 0, false
-	}
-	*h = holder{p.key, s[:i]}
-	return i, true
+	return i, p.key, i != -1
 }
 
 func (p param) equal(m matcher) bool {
@@ -70,9 +60,8 @@ func (p param) string() string {
 
 type wildcard string
 
-func (w wildcard) match(s string, h *holder) (int, bool) {
-	*h = holder{string(w), s}
-	return len(s), true
+func (w wildcard) match(s string) (int, string, bool) {
+	return len(s), string(w), true
 }
 
 func (w wildcard) equal(m matcher) bool {
@@ -91,13 +80,9 @@ type regex struct {
 	*regexp.Regexp
 }
 
-func (w regex) match(s string, h *holder) (int, bool) {
+func (w regex) match(s string) (int, string, bool) {
 	match := w.FindString(s)
-	if match == "" {
-		return 0, false
-	}
-	*h = holder{w.key, match}
-	return len(match), true
+	return len(match), w.key, match != ""
 }
 
 func (w regex) equal(m matcher) bool {
