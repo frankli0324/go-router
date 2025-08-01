@@ -16,6 +16,8 @@ func typeID(m matcher) int {
 	return -1
 }
 
+// Originates from fasthttp, licensed under the BSD 3-Clause License.
+// https://github.com/fasthttp/router
 func lcp(a, b string) int {
 	i := 0
 

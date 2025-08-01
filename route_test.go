@@ -33,6 +33,7 @@ func TestRouterOrder(t *testing.T) {
 	}
 }
 
+// Below tests are taken from fasthttp, licensed under the BSD 3-Clause License.
 type testRequests []struct {
 	path       string
 	nilHandler bool
