@@ -97,8 +97,9 @@ func (w regex) string() string {
 }
 
 type node[T any] struct {
-	m        matcher
-	assigned bool
-	handler  T
 	children []*node[T]
+	m        matcher
+	handler  T
+	assigned bool
+	b        byte // for optimization
 }

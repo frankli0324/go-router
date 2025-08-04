@@ -2,6 +2,7 @@ package router
 
 import (
 	"sort"
+	"strings"
 )
 
 func (n *node[T]) add(path, fullPath string, handler T) (*node[T], error) {
@@ -55,6 +56,9 @@ func (n *node[T]) add(path, fullPath string, handler T) (*node[T], error) {
 			return nil, ErrWildcardNotAtEnd.With(fullPath)
 		}
 		newch := &node[T]{m: next}
+		if next, ok := next.(literal); ok {
+			newch.b = next[0]
+		}
 		n.children = append(n.children, newch)
 		n = newch
 	}
@@ -69,19 +73,13 @@ func (n *node[T]) add(path, fullPath string, handler T) (*node[T], error) {
 func (n *node[T]) get(path string, params map[string]string) *node[T] {
 	for _, child := range n.children {
 		end, ok, key := 0, false, ""
-		// golang is too dumb to inline these and not escape assign to heap
-		switch m := child.m.(type) {
-		case literal:
-			if len(path) != 0 && len(m) != 0 && string(m)[0] != path[0] {
+		if child.b != 0 {
+			if path != "" && child.b != path[0] {
 				continue
 			}
-			end, key, ok = m.match(path)
-		case wildcard:
-			end, key, ok = m.match(path)
-		case param:
-			end, key, ok = m.match(path)
-		case regex:
-			end, key, ok = m.match(path)
+			end, key, ok = child.m.(literal).match(path)
+		} else {
+			end, key, ok = child.m.match(path)
 		}
 		if !ok {
 			continue
@@ -94,7 +92,7 @@ func (n *node[T]) get(path string, params map[string]string) *node[T] {
 			next = child
 		}
 		if params != nil && next != nil && next.assigned && key != "" {
-			params[key] = path[:end]
+			params[key] = strings.Clone(path[:end])
 		}
 		return next
 	}
@@ -110,7 +108,7 @@ func (n *node[T]) cut(i int) *node[T] {
 		return n
 	}
 	n.children = []*node[T]{{
-		m: l[i:], children: n.children,
+		m: l[i:], b: l[i], children: n.children,
 		handler: n.handler, assigned: n.assigned,
 	}}
 	var zero T

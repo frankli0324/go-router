@@ -15,7 +15,7 @@ func execute(b *testing.B, routes []string, t []string) {
 	rr := router.New[*fasthttp.RequestHandler]()
 	var zero fasthttp.RequestHandler
 	for _, route := range routes {
-		tree.Handle(route, func(ctx *fasthttp.RequestCtx) {})
+		tree.Set(route, func(ctx *fasthttp.RequestCtx) {})
 		r.Add(route, func(ctx *fasthttp.RequestCtx) {})
 		rr.Handle(route, &zero)
 	}
