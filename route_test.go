@@ -33,6 +33,24 @@ func TestRouterOrder(t *testing.T) {
 	}
 }
 
+func TestGetAllMatches(t *testing.T) {
+	r := NewRouter[int]()
+	r.Set("/{path:*}", 1)
+	r.Set("/ab{var}", 2)
+	r.Set("/absolute", 3)
+	r.Set("/{reg:.*}", 4)
+	r.Set("/abs{var}", 5)
+	r.Set("/{reg:([a-z]*)}", 6)
+	cnt := 6
+	r.GetAllMatches("/absolute", func(hit int) bool {
+		cnt--
+		return true
+	})
+	if cnt != 0 {
+		t.Errorf("expected to match 6, got %d remaining", cnt)
+	}
+}
+
 // Below tests are taken from fasthttp, licensed under the BSD 3-Clause License.
 type testRequests []struct {
 	path       string

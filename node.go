@@ -71,17 +71,17 @@ func (n *node[T]) add(path, fullPath string, handler T) (*node[T], error) {
 }
 
 func (n *node[T]) get(path string, params map[string]string) *node[T] {
-	for _, child := range n.children {
-		end, ok, key := 0, false, ""
+	for i := 0; i < len(n.children); i++ {
+		child, end, key, ok := n.children[i], 0, "", false
 		if child.b != 0 {
 			if path == "" || path[0] != child.b {
 				continue
 			}
-			end, key, ok = child.m.(literal).match(path)
-		} else {
-			end, key, ok = child.m.match(path)
-		}
-		if !ok {
+			if end, key, ok = child.m.(literal).match(path); !ok {
+				continue
+			}
+			i = n.lastlit
+		} else if end, key, ok = child.m.match(path); !ok {
 			continue
 		}
 		var next *node[T]
@@ -89,17 +89,44 @@ func (n *node[T]) get(path string, params map[string]string) *node[T] {
 			next = child.get(path[end:], params)
 		}
 		if next == nil {
-			if end != len(path) {
+			if !child.assigned || end != len(path) {
 				continue
 			}
 			next = child
 		}
-		if params != nil && next != nil && next.assigned && key != "" {
+		if params != nil && key != "" {
 			params[key] = strings.Clone(path[:end])
 		}
 		return next
 	}
 	return nil
+}
+
+func (n *node[T]) getcb(path string, f func(n T) (more bool)) (has bool) {
+	for i := 0; i < len(n.children); i++ {
+		child, end, ok := n.children[i], 0, false
+		if child.b != 0 {
+			if path == "" || path[0] != child.b {
+				continue
+			}
+			if end, _, ok = child.m.(literal).match(path); !ok {
+				continue
+			}
+			i = n.lastlit
+		} else if end, _, ok = child.m.match(path); !ok {
+			continue
+		}
+		if len(child.children) == 0 || !child.getcb(path[end:], f) {
+			if !child.assigned || end != len(path) {
+				continue
+			}
+			if !f(child.handler) {
+				return true
+			}
+		}
+		has = true // no return here, iterate entire tree
+	}
+	return
 }
 
 func (n *node[T]) cut(i int) *node[T] {
@@ -123,7 +150,10 @@ func (n *node[T]) cut(i int) *node[T] {
 
 func (n *node[T]) sort() {
 	sort.Sort(n)
-	for _, child := range n.children {
+	for i, child := range n.children {
+		if _, ok := child.m.(literal); ok {
+			n.lastlit = i
+		}
 		child.sort()
 	}
 }

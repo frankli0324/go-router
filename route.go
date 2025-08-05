@@ -43,6 +43,27 @@ func (r *Router[T]) GetParam(path string, params map[string]string) (zero T) {
 	return n.handler
 }
 
+func (r *Router[T]) GetAllMatches(path string, f func(T) (more bool)) {
+	if path == "" || path[0] != '/' || len(r.tree.children) == 0 || f == nil {
+		return
+	}
+	n := &r.tree
+	if ch := n.children[0]; ch.b == '/' {
+		// first node is almost always a literal("/")
+		m := ch.m.(literal)
+		end, ok := 1, len(m) == 1
+		if !ok {
+			end, _, ok = m.match(path)
+		}
+		if ok {
+			n, path = ch, path[end:]
+		}
+	}
+	if !n.getcb(path, f) && path == "" {
+		f(n.handler)
+	}
+}
+
 // Get matches the given path and returns the corresponding value.
 // If no pattern is found, the zero value is returned. It's routine-safe.
 func (r *Router[T]) Get(path string) T {

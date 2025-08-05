@@ -100,6 +100,7 @@ type node[T any] struct {
 	children []*node[T]
 	m        matcher
 	handler  T
+	lastlit  int // cnt literal children, for optimization
 	assigned bool
 	b        byte // for optimization
 }
