@@ -1,7 +1,7 @@
-code.byted.org/lang/gg v0.21.0 h1:tqll7V5szNVnGLRCroYwwk50Qr04RdGHt34xkZgaFFo=
-code.byted.org/lang/gg v0.21.0/go.mod h1:0PJ3ycctxq5JSI8WdvYHUz/NdWR7WsrR9n8hli8MgRg=
 github.com/andybalholm/brotli v1.2.0 h1:ukwgCxwYrmACq68yiUqwIWnGY0cTPox/M94sVwToPjQ=
 github.com/andybalholm/brotli v1.2.0/go.mod h1:rzTDkvFWvIrjDXZHkuS16NPggd91W3kUSvPlQ1pLaKY=
+github.com/bytedance/gg v1.1.0 h1:FSKRxOZeN30w7h6snEbHxzgVMUV7+Xu4gc/Lz1cmBFw=
+github.com/bytedance/gg v1.1.0/go.mod h1:MeGhXyy5K20hNAU9GkMM51sXdm/lsqdU0CxwIiGvZpo=
 github.com/fasthttp/router v1.5.4 h1:oxdThbBwQgsDIYZ3wR1IavsNl6ZS9WdjKukeMikOnC8=
 github.com/fasthttp/router v1.5.4/go.mod h1:3/hysWq6cky7dTfzaaEPZGdptwjwx0qzTgFCKEWRjgc=
 github.com/google/go-cmp v0.5.9 h1:O2Tfq5qg4qc4AmwVlvv0oLiVAGB7enBSJ2x2DqQFi38=

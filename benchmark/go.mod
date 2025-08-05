@@ -5,7 +5,7 @@ go 1.23.0
 replace github.com/frankli0324/go-router => ../
 
 require (
-	code.byted.org/lang/gg v0.21.0
+	github.com/bytedance/gg v1.1.0
 	github.com/fasthttp/router v1.5.4
 	github.com/frankli0324/go-router v0.0.0-00010101000000-000000000000
 	github.com/savsgio/gotils v0.0.0-20250408102913-196191ec6287

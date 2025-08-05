@@ -1,7 +1,7 @@
 package router
 
 import (
-	"code.byted.org/lang/gg/gslice"
+	"github.com/bytedance/gg/gslice"
 )
 
 // getOptionalPaths returns all possible paths when the original path
