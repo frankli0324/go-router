@@ -74,7 +74,7 @@ func (n *node[T]) get(path string, params map[string]string) *node[T] {
 	for _, child := range n.children {
 		end, ok, key := 0, false, ""
 		if child.b != 0 {
-			if path != "" && child.b != path[0] {
+			if path == "" || path[0] != child.b {
 				continue
 			}
 			end, key, ok = child.m.(literal).match(path)
@@ -84,7 +84,10 @@ func (n *node[T]) get(path string, params map[string]string) *node[T] {
 		if !ok {
 			continue
 		}
-		next := child.get(path[end:], params)
+		var next *node[T]
+		if len(child.children) != 0 {
+			next = child.get(path[end:], params)
+		}
 		if next == nil {
 			if end != len(path) {
 				continue

@@ -18,10 +18,25 @@ func (r *Router[T]) Set(path string, handler T) error {
 // assigning the given params map with the matched parameters.
 // If no pattern is found, the zero value is returned. It's routine-safe.
 func (r *Router[T]) GetParam(path string, params map[string]string) (zero T) {
-	if path == "" || path[0] != '/' {
+	if path == "" || path[0] != '/' || len(r.tree.children) == 0 {
 		return zero
 	}
-	n := r.tree.get(path, params)
+	n := &r.tree
+	if ch := n.children[0]; ch.b == '/' {
+		// first node is almost always a literal("/")
+		m := ch.m.(literal)
+		end, ok := 1, len(m) == 1
+		if !ok {
+			end, _, ok = m.match(path)
+		}
+		if ok {
+			n, path = ch, path[end:]
+			if path == "" {
+				zero = n.handler
+			}
+		}
+	}
+	n = n.get(path, params)
 	if n == nil {
 		return zero
 	}
